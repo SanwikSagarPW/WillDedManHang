@@ -1,3 +1,14 @@
+// ============================================
+// ANALYTICS SETUP
+// ============================================
+const analytics = new AnalyticsManager();
+let sessionStartTime = 0;
+let roundStartTime = 0;
+let currentLevelId = null;
+let totalGuesses = 0;
+let correctGuesses = 0;
+let incorrectGuesses = 0;
+
 // Game State
 let currentWord = '';
 let currentWordData = null;
@@ -89,6 +100,17 @@ function startNewGame() {
     const cat = categorySelect.value;
     const diff = difficultySelect.value;
     
+    // Initialize Analytics for this game session
+    const sessionId = 'session_' + Date.now();
+    analytics.initialize('deadhang_game', sessionId);
+    sessionStartTime = Date.now();
+    console.log('[Analytics] Game session started:', sessionId);
+    
+    // Track game metadata
+    analytics.addRawMetric('category', cat);
+    analytics.addRawMetric('difficulty', diff);
+    analytics.addRawMetric('max_rounds', MAX_ROUNDS);
+    
     loadWords(cat, diff).then(() => {
         homeScreen.classList.remove('active');
         gameScreen.classList.add('active');
@@ -112,6 +134,14 @@ function startNewRound() {
     guessedLetters = [];
     wrongGuesses = 0;
     gameActive = true;
+    
+    // Start Analytics Level Tracking
+    currentLevelId = 'round_' + currentRound + '_' + currentWord.toLowerCase();
+    analytics.startLevel(currentLevelId);
+    roundStartTime = Date.now();
+    totalGuesses = 0;
+    correctGuesses = 0;
+    incorrectGuesses = 0;
     
     // Reset Timer
     if (timerInterval) clearInterval(timerInterval);
@@ -153,18 +183,53 @@ function handleGuess(letter, keyElement) {
     
     keyElement.classList.add('used');
     guessedLetters.push(letter);
+    totalGuesses++;
     
-    if (currentWord.includes(letter)) {
+    const isCorrect = currentWord.includes(letter);
+    const timeTaken = Date.now() - roundStartTime;
+    
+    if (isCorrect) {
         keyElement.classList.add('correct');
+        correctGuesses++;
+        
+        // Track correct guess
+        analytics.recordTask(
+            currentLevelId,
+            'guess_' + totalGuesses + '_' + letter,
+            'Guessed letter: ' + letter,
+            'correct',
+            'correct',
+            timeTaken,
+            1  // Small XP for correct letter
+        );
+        
         displayWord();
         checkWin();
     } else {
         keyElement.classList.add('wrong');
         wrongGuesses++;
+        incorrectGuesses++;
+        
+        // Track wrong guess
+        analytics.recordTask(
+            currentLevelId,
+            'guess_' + totalGuesses + '_' + letter,
+            'Guessed letter: ' + letter,
+            'correct',
+            'wrong',
+            timeTaken,
+            0
+        );
+        
         updateHangman();
         livesCount.textContent = maxWrongGuesses - wrongGuesses;
         if (wrongGuesses >= maxWrongGuesses) endGame(false);
     }
+    
+    // Track guess metrics
+    analytics.addRawMetric('total_guesses_round_' + currentRound, totalGuesses);
+    analytics.addRawMetric('correct_guesses_round_' + currentRound, correctGuesses);
+    analytics.addRawMetric('wrong_guesses_round_' + currentRound, incorrectGuesses);
 }
 
 function updateHangman() {
@@ -191,15 +256,50 @@ function endGame(won) {
     gameActive = false;
     clearInterval(timerInterval);
     const msg = document.getElementById('gameOverMessage');
+    const timeTaken = Date.now() - roundStartTime;
     
+    // Calculate XP for this round
+    let roundXP = 0;
     if (won) {
         totalScore += POINTS_PER_WORD;
         wordsSolved++;
         currentScoreDisplay.textContent = totalScore;
         msg.innerHTML = `<div class="win-message">🎉 Correct! Word: ${currentWord}</div>`;
+        
+        // XP calculation: base + time bonus + efficiency bonus
+        const baseXP = 50;
+        const timeBonus = Math.max(0, 30 - Math.floor(timeTaken / 1000));
+        const efficiencyBonus = Math.max(0, 20 - (incorrectGuesses * 5));
+        roundXP = baseXP + timeBonus + efficiencyBonus;
+        
+        console.log('[Analytics] Round won!', {
+            timeTaken: (timeTaken / 1000).toFixed(2) + 's',
+            baseXP: baseXP,
+            timeBonus: timeBonus,
+            efficiencyBonus: efficiencyBonus,
+            totalXP: roundXP
+        });
     } else {
         msg.innerHTML = `<div class="lose-message">💀 Failed! Word: ${currentWord}</div>`;
+        roundXP = 5;  // Small consolation XP
+        
+        console.log('[Analytics] Round failed', {
+            timeTaken: (timeTaken / 1000).toFixed(2) + 's',
+            wrongGuesses: wrongGuesses,
+            totalXP: roundXP
+        });
     }
+    
+    // End analytics level tracking
+    analytics.endLevel(currentLevelId, won, timeTaken, roundXP);
+    
+    // Track round metrics
+    const accuracy = totalGuesses > 0 ? (correctGuesses / totalGuesses * 100).toFixed(1) : 0;
+    analytics.addRawMetric('round_' + currentRound + '_accuracy', accuracy);
+    analytics.addRawMetric('round_' + currentRound + '_time_seconds', (timeTaken / 1000).toFixed(2));
+    analytics.addRawMetric('round_' + currentRound + '_xp', roundXP);
+    analytics.addRawMetric('round_' + currentRound + '_word', currentWord);
+    analytics.addRawMetric('round_' + currentRound + '_result', won ? 'won' : 'lost');
     
     educationalInfo.innerHTML = `<strong>Did you know?</strong> ${currentWordData.educational}`;
     gameOverModal.classList.add('active');
@@ -209,6 +309,35 @@ function showGameComplete() {
     gameScreen.classList.remove('active');
     document.getElementById('finalScore').textContent = totalScore;
     document.getElementById('wordsSolved').textContent = wordsSolved;
+    
+    // Calculate final game metrics
+    const totalTime = Date.now() - sessionStartTime;
+    const accuracy = MAX_ROUNDS > 0 ? ((wordsSolved / MAX_ROUNDS) * 100).toFixed(1) : 0;
+    
+    // Update accuracy display
+    document.getElementById('accuracy').textContent = accuracy + '%';
+    
+    // Track final game metrics
+    analytics.addRawMetric('total_score', totalScore);
+    analytics.addRawMetric('words_solved', wordsSolved);
+    analytics.addRawMetric('words_failed', MAX_ROUNDS - wordsSolved);
+    analytics.addRawMetric('overall_accuracy', accuracy);
+    analytics.addRawMetric('total_time_seconds', (totalTime / 1000).toFixed(2));
+    analytics.addRawMetric('game_completed', true);
+    
+    console.log('[Analytics] Game Complete!', {
+        totalScore: totalScore,
+        wordsSolved: wordsSolved,
+        accuracy: accuracy + '%',
+        totalTime: (totalTime / 1000).toFixed(2) + 's'
+    });
+    
+    // Log full report before submission
+    console.log('[Analytics] Full Report:', analytics.getReportData());
+    
+    // Submit analytics report
+    analytics.submitReport();
+    
     gameCompleteModal.classList.add('active');
 }
 
@@ -252,5 +381,16 @@ audioBtn.addEventListener('click', () => {
         bgMusic.pause();
         audioBtn.classList.add('muted');
         audioBtn.querySelector('.audio-icon').textContent = '🔇';
+    }
+});
+
+// Track incomplete sessions when user leaves
+window.addEventListener('beforeunload', () => {
+    if (currentLevelId && gameActive) {
+        const timeTaken = Date.now() - roundStartTime;
+        analytics.endLevel(currentLevelId, false, timeTaken, 0);
+        analytics.addRawMetric('session_incomplete', true);
+        analytics.submitReport();
+        console.log('[Analytics] Session ended (incomplete)');
     }
 });
