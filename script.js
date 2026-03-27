@@ -44,12 +44,12 @@ const bodyParts = ['head', 'body', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg']
 // DOM Elements
 const homeScreen = document.getElementById('homeScreen');
 const gameScreen = document.getElementById('gameScreen');
+const startBtn = document.getElementById('startBtn');
+const setupModal = document.getElementById('setupModal');
 const playBtn = document.getElementById('playBtn');
 const backBtn = document.getElementById('backBtn');
 const restartBtn = document.getElementById('restartBtn');
 const skipBtn = document.getElementById('skipBtn');
-const categorySelect = document.getElementById('categorySelect');
-const difficultySelect = document.getElementById('difficultySelect');
 const wordDisplay = document.getElementById('wordDisplay');
 const keyboard = document.getElementById('keyboard');
 const livesCount = document.getElementById('livesCount');
@@ -63,6 +63,10 @@ const educationalInfo = document.getElementById('educationalInfo');
 const howToPlayModal = document.getElementById('howToPlayModal');
 const gameOverModal = document.getElementById('gameOverModal');
 const gameCompleteModal = document.getElementById('gameCompleteModal');
+
+// Game settings from button selection
+let selectedCategory = 'technology';
+let selectedDifficulty = 'easy';
 
 // Load words from JSON (Optional)
 async function loadWords(category, difficulty) {
@@ -97,8 +101,8 @@ function startNewGame() {
     wordsSolved = 0;
     currentScoreDisplay.textContent = totalScore;
     
-    const cat = categorySelect.value;
-    const diff = difficultySelect.value;
+    const cat = selectedCategory;
+    const diff = selectedDifficulty;
     
     // Initialize Analytics for this game session
     const sessionId = 'session_' + Date.now();
@@ -342,8 +346,39 @@ function showGameComplete() {
 }
 
 // Event Listeners
-playBtn.addEventListener('click', startNewGame);
-document.getElementById('howToPlayBtn').addEventListener('click', () => howToPlayModal.classList.add('active'));
+// Home screen - open setup modal
+startBtn.addEventListener('click', () => {
+    setupModal.classList.add('active');
+});
+
+// Category button selection
+document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedCategory = e.target.dataset.category;
+    });
+});
+
+// Difficulty button selection
+document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedDifficulty = e.target.dataset.difficulty;
+    });
+});
+
+// Start game from setup modal
+playBtn.addEventListener('click', () => {
+    setupModal.classList.remove('active');
+    startNewGame();
+});
+
+document.getElementById('howToPlayBtn').addEventListener('click', () => {
+    setupModal.classList.remove('active');
+    howToPlayModal.classList.add('active');
+});
 document.querySelector('.close-btn').addEventListener('click', () => howToPlayModal.classList.remove('active'));
 backBtn.addEventListener('click', () => {
     gameScreen.classList.remove('active');

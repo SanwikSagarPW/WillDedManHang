@@ -2,73 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DeadHang - Hangman Game</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2.4">
 </head>
 <body>
-    <!-- Home Screen -->
+    <!-- Home Screen - Main Title Screen -->
     <div id="homeScreen" class="screen active">
-        <div class="container">
-            <div class="game-title">
-                <h1 class="title-main">DeadHang</h1>
-                <p class="title-sub">Can you save the stick figure?</p>
-            </div>
+        <div class="title-screen">
+            <h1 class="main-title">DEDMANHANG</h1>
+            <button class="btn-start" id="startBtn">START GAME</button>
+        </div>
+    </div>
 
-            <div class="selection-panel">
-                <div class="selection-group">
-                    <label class="selection-label">📚 Category</label>
-                    <select class="selection-dropdown" id="categorySelect">
-                        <option value="programming">Programming</option>
-                        <option value="science">Science</option>
-                        <option value="history">History</option>
-                        <option value="geography">Geography</option>
-                        <option value="technology">Technology</option>
-                    </select>
-                </div>
-
-                <div class="selection-group">
-                    <label class="selection-label">⚡ Difficulty</label>
-                    <select class="selection-dropdown" id="difficultySelect">
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
-                    </select>
+    <!-- Game Setup Modal -->
+    <div id="setupModal" class="modal">
+        <div class="modal-content setup-modal">
+            <h2 class="setup-title">DEADHANG</h2>
+            <p class="setup-subtitle">CAN YOU SAVE THE STICK FIGURE?</p>
+            
+            <div class="setup-section">
+                <label class="setup-label">• SELECT CATEGORY</label>
+                <div class="category-buttons">
+                    <button class="category-btn" data-category="programming">Programming</button>
+                    <button class="category-btn" data-category="science">Science</button>
+                    <button class="category-btn" data-category="history">History</button>
+                    <button class="category-btn" data-category="geography">Geography</button>
+                    <button class="category-btn active" data-category="technology">Technology</button>
                 </div>
             </div>
-            
-            <div class="menu-buttons">
-                <button class="btn btn-play" id="playBtn">
-                    <span>🎮</span> Play Game
-                </button>
-                <button class="btn btn-how" id="howToPlayBtn">
-                    <span>📖</span> How to Play
-                </button>
+
+            <div class="setup-section">
+                <label class="setup-label">• DIFFICULTY LEVEL</label>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+                    <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+                </div>
             </div>
-            
-            <div class="audio-controls">
-                <button class="audio-btn" id="audioBtn">
-                    <span class="audio-icon">🔊</span>
-                </button>
-            </div>
+
+            <button class="btn-start-game" id="playBtn">START GAME</button>
+            <button class="btn-how-to-play" id="howToPlayBtn">HOW TO PLAY</button>
         </div>
     </div>
 
     <!-- How to Play Modal -->
     <div id="howToPlayModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content how-to-play-content">
             <span class="close-btn">&times;</span>
-            <h2>How to Play</h2>
+            <h2>HOW TO SURVIVE</h2>
             <div class="instructions">
-                <p>🎯 <strong>Objective:</strong> Guess the hidden word before the hangman is complete!</p>
-                <p>📝 <strong>Rules:</strong></p>
-                <ul>
-                    <li>Click on letters to make your guess</li>
-                    <li>Each wrong guess adds a part to the hangman</li>
-                    <li>You have 6 wrong guesses before game over</li>
-                    <li>Guess the complete word to win!</li>
-                </ul>
-                <p>💡 <strong>Tip:</strong> Start with common vowels like A, E, I, O, U</p>
+                <div class="instruction-item" data-icon="T">
+                    <strong>Choose letters carefully</strong>
+                </div>
+                <div class="instruction-item" data-icon="⚠">
+                    <strong>Wrong guess brings him closer to death</strong>
+                </div>
+                <div class="instruction-item" data-icon="✕">
+                    <strong>Only 6 mistakes allowed</strong>
+                </div>
+                <div class="instruction-item" data-icon="💀">
+                    <strong>Guess the word to save him</strong>
+                </div>
+                <div class="instruction-tip" data-icon="💡">
+                    <em>Start with vowels... if you want him to survive.</em>
+                </div>
             </div>
         </div>
     </div>
